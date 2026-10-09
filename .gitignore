@@ -1,0 +1,3 @@
+skills/book-print-preflight-workspace/*
+!skills/book-print-preflight-workspace/make_testfiles.py
+__pycache__/

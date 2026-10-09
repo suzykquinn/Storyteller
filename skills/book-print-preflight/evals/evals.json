@@ -1,0 +1,42 @@
+{
+  "skill_name": "book-print-preflight",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Hi, can you check my cover before I upload it to KDP? It's a 5x8 paperback, 300 pages on cream paper. File is testfiles/bad_cover.pdf. I made it in Affinity.",
+      "expected_output": "Not ready verdict catching all planted faults with Affinity-specific fixes",
+      "files": ["testfiles/bad_cover.pdf"],
+      "assertions": [
+        "Flags spine as 0.6in when 0.75in is needed (cover 10.85in wide vs 11.0in)",
+        "Flags front cover image at ~150ppi as below 300",
+        "Flags the back cover top image as likely upscaled",
+        "Flags the 400% ink black area on the back cover",
+        "Flags 8pt back copy set in rich black (60/40/40/100) rather than 100K",
+        "Flags the 6pt reversed white credit line as too small",
+        "Flags the title as too close to the top trim",
+        "Flags the RGB title colour",
+        "Flags the 0.1pt hairline",
+        "Flags fonts not embedded",
+        "Flags SUZY K QUINN text sitting on the back cover beside the fold instead of centred on the spine",
+        "Gives fixes in Affinity terms",
+        "Uses Blockers / Risks / Polish structure with a clear verdict"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Interior for the new Bob and Shirley book is done, going to IngramSpark and KDP, 5x8 cream B&W. Is it print ready? testfiles/bad_interior.pdf (exported from Atticus)",
+      "expected_output": "Not ready verdict for both printers",
+      "files": ["testfiles/bad_interior.pdf"],
+      "assertions": [
+        "Flags gutter of 0.2in on right-hand pages (needs 0.375in KDP, ~0.5in Ingram)",
+        "Flags body text as RGB black rather than greyscale/100K (Ingram B&W risk)",
+        "Flags the red 'Chapter Five' heading on p13 as colour in a B&W interior",
+        "Flags the 100ppi image on p11",
+        "Flags fonts not embedded",
+        "Does not treat the 2 blank pages (3-4) as a blocker",
+        "Notes no PDF/X declared for Ingram",
+        "Gives fixes in Atticus terms"
+      ]
+    }
+  ]
+}
