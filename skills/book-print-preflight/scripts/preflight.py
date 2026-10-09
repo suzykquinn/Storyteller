@@ -312,6 +312,47 @@ def has_visible_colour(page, dpi=30, chroma=30, min_px=6):
     return False
 
 
+def bleed_gaps(page, edges=("top", "bottom", "left", "right"), dpi=144):
+    """Find white slivers where artwork stops short of the bleed edge.
+
+    Compares the outermost strip of the page with a strip just inside the trim:
+    if the inside is mostly ink but the very edge is paper-white, the art
+    doesn't reach the bleed and a white line can show after trimming.
+    """
+    pix = page.get_pixmap(dpi=dpi, alpha=False)
+    w, h, s = pix.width, pix.height, pix.samples
+    edge_px = max(1, int(0.02 * dpi))          # outermost ~0.02in
+    inner_at = int(0.16 * dpi)                  # just inside the trim
+
+    def white(x, y):
+        i = (y * w + x) * 3
+        return s[i] > 245 and s[i + 1] > 245 and s[i + 2] > 245
+
+    def frac(points):
+        pts = list(points)
+        return sum(white(x, y) for x, y in pts) / max(1, len(pts))
+
+    out = {}
+    lines = {
+        "top": (lambda k: ((x, k) for x in range(0, w, 3)), 0, inner_at),
+        "bottom": (lambda k: ((x, h - 1 - k) for x in range(0, w, 3)), 0, inner_at),
+        "left": (lambda k: ((k, y) for y in range(0, h, 3)), 0, inner_at),
+        "right": (lambda k: ((w - 1 - k, y) for y in range(0, h, 3)), 0, inner_at),
+    }
+    for e in edges:
+        gen, _, inner = lines[e]
+        outer_white = max(frac(gen(k)) for k in range(edge_px))
+        inner_white = frac(gen(inner))
+        if outer_white - inner_white > 0.25:
+            # measure how deep the gap goes
+            depth = 0
+            while depth < inner and frac(gen(depth)) - inner_white > 0.25:
+                depth += 1
+            out[e] = {"white_pct_at_edge": round(outer_white * 100), "white_pct_inside": round(inner_white * 100),
+                      "gap_in": round(depth / dpi, 3)}
+    return out
+
+
 # ---------------------------------------------------------------- cover geometry
 SPINE_PER_PAGE = {
     "kdp": {"white": 0.002252, "cream": 0.0025, "colour": 0.002252, "premium-colour": 0.002347},
@@ -527,8 +568,18 @@ def main():
         R["pages_with_colour_ink"] = colour_pages[:100]
         if trim:
             R["margins"] = interior_margins(doc, a.pages or len(doc), R.get("interior_bleed") is True)
+        if R.get("interior_bleed"):
+            gaps = {}
+            for pg in doc:
+                if pg.get_images() or pg.get_drawings():
+                    outside = "right" if pg.number % 2 == 0 else "left"
+                    g = bleed_gaps(pg, ("top", "bottom", outside), dpi=72)
+                    if g:
+                        gaps[pg.number + 1] = g
+            R["bleed_gaps_by_page"] = gaps
     if a.kind == "cover":
         R["geometry"] = cover_geometry(doc[0], trim, a.pages, a.paper, a.printer)
+        R["bleed_gaps"] = bleed_gaps(doc[0])
         R["text_outside_safe_area"] = [{"page": p, "text": t, "size": s, "why": w} for p, t, s, w in edge_hits]
         R["cover_text"] = doc[0].get_text()[:3000]
         isbns = re.findall(r"97[89][\d\- ]{10,16}", R["cover_text"])
@@ -596,11 +647,15 @@ def print_report(R):
         p(f"Ink p{i['page']}: max TAC {i['max_tac_pct']}% | area >240%: {i['pct_area_over_240']}% | "
           f">300%: {i['pct_area_over_300']}% | avg CMYK {i['avg_cmyk_pct']}")
     if R["kind"] == "cover":
+        for edge, g in R.get("bleed_gaps", {}).items():
+            p(f"  !! artwork stops short of the {edge} bleed edge: {g}")
         for e in R["text_outside_safe_area"]:
             p(f"  !! '{e['text']}' ({e['size']}pt): {e['why']}")
         p(f"ISBNs found in cover text: {R['isbns_found_in_text'] or 'none'} | check digit valid: {R['isbn_checksums_ok']}")
     else:
         p(f"Blank pages: {R['blank_pages'][:50]}")
+        for pg, g in list(R.get("bleed_gaps_by_page", {}).items())[:20]:
+            p(f"  !! p{pg}: art stops short of bleed: {g}")
         if R["pages_with_colour_ink"]:
             p(f"Pages with colour ink: {R['pages_with_colour_ink'][:50]}")
         if "margins" in R:

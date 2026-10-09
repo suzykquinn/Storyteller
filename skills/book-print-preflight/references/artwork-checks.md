@@ -16,8 +16,11 @@ Contents: 1 Geometry | 2 Resolution & image quality | 3 Colour & ink |
 - **Spine width matches page count x paper**. Recompute it every time; it is the
   most common rejection.
 - **Spine content centred on the spine**, not drifting towards one fold.
-- **Backgrounds reach the bleed edge** on every side (look at the guides render:
-  a white sliver between the art and the red trim line on the outside is a fault).
+- **Backgrounds reach the bleed edge** on every side. The preflight reports
+  "artwork stops short of the bleed edge" gaps; confirm on the guides render
+  (white between the art and the page edge). Also look for white hairlines
+  *inside* the design where two pieces of art nearly meet.
+- **Text sitting on top of images** (or images covering text) in interiors.
 - **Nothing important in the 0.125in safe margin**, including the bottom of
   descenders, award badges and author photos. Text that crosses a spine fold will
   wrap around the book.
@@ -75,7 +78,9 @@ Contents: 1 Geometry | 2 Resolution & image quality | 3 Colour & ink |
   (0,0,0) converts to a 4-colour rich black, so it's the same problem in disguise.
 - **Large black areas** look weak in 100K alone (dark grey). Use a controlled
   rich black, Ingram's 60/40/40/100 is the standard. 100/100/100/100 (400%) is
-  a blocker.
+  a blocker. Call it "400% black" or "4-colour black", not "registration",
+  unless the file actually uses the Registration/All swatch (a Separation
+  named All), which is a different fault.
 - **Mixed blacks next to each other** (a 100K box butting a rich black box)
   show up as two visibly different blacks.
 - **White/reversed text on rich black**: small reversed text can fill in if
@@ -125,7 +130,10 @@ Contents: 1 Geometry | 2 Resolution & image quality | 3 Colour & ink |
   interior title page, and the metadata the user gives you.
 - **ISBN**: valid check digit; same number in the barcode human-readable line,
   the text on the back, and the interior copyright page; the right ISBN for the
-  format (paperback vs hardcover have different ISBNs).
+  format (paperback vs hardcover have different ISBNs). One ISBN you own can be
+  used for the same paperback on both KDP and IngramSpark; a free KDP-assigned
+  ISBN cannot be used at Ingram. Don't tell the user they need separate ISBNs
+  per printer.
 - **Price** on the cover/barcode (if any) matches the intended price and
   currency, or omit it.
 - **Series name and number** correct and consistent.
